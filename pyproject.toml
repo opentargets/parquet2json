@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.scripts]
-hello = "parquet2json:hello"
+parquet2json = "parquet2json.cli:app"
 
 [build-system]
 requires = ["hatchling"]
