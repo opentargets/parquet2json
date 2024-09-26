@@ -1,2 +1,40 @@
-# parquet2json
-Parquet to JSON lines converter
+# Parquet to NDJSON (JSON lines) converter
+
+## Usage
+- Install [uv](https://docs.astral.sh/uv/getting-started/installation/)
+- Install to virtual env `uv venv; source .venv/bin/activate; uv pip install "git+https://github.com/opentargets/parquet2json"` 
+- `parquet2json <PARQUET_IN> <JSON_OUT>`
+
+### Help
+```
+ Usage: parquet2json [OPTIONS] PARQUET JSON                          
+                                                                     
+ Convert parquet file to json.                                       
+                                                                     
+╭─ Arguments ───────────────────────────────────────────────────────╮
+│ *    parquet      TEXT  Input path to a parquet. [default: None]  │
+│                         [required]                                │
+│ *    json         PATH  Output path to a JSON. [default: None]    │
+│                         [required]                                │
+╰───────────────────────────────────────────────────────────────────╯
+╭─ Options ─────────────────────────────────────────────────────────╮
+│ --help  -h        Show this message and exit.                     │
+╰───────────────────────────────────────────────────────────────────╯
+```
+
+## Copyright
+Copyright 2014-2024 EMBL - European Bioinformatics Institute, Genentech, GSK, MSD, Pfizer, Sanofi and Wellcome Sanger Institute
+
+This software was developed as part of the Open Targets project. For more information please
+see: http://www.opentargets.org
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
