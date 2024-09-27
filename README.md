@@ -1,6 +1,17 @@
-# Parquet to NDJSON (JSON lines) converter
+# Parquet to NDJSON (newline delimited JSON) converter
 
-## Usage
+Simple CLI app for converting parquet to newline delimited JSON. Built with [Polars](https://docs.pola.rs/) and [Typer](https://typer.tiangolo.com/).
+
+## Instructions with docker or uv
+### docker
+- Install docker
+- `docker build -t p2j .`
+- `docker run -v /path/to/files:/mnt -it p2j /mnt/<PARQUET> /mnt/<JSON>`
+Or if reading parquet from Google bucket:
+- `docker run -v /path/to/files:/mnt -v /path/to/gcp/credentials.json:/app/credentials.json -e GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json -it p2j gs://<PATH_TO_PARQUET> /mnt/<JSON>`
+
+
+### uv
 - Install [uv](https://docs.astral.sh/uv/getting-started/installation/)
 - Install to virtual env `uv venv; source .venv/bin/activate; uv pip install "git+https://github.com/opentargets/parquet2json"` 
 - `parquet2json <PARQUET_IN> <JSON_OUT>`
