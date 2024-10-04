@@ -1,6 +1,7 @@
 """Parquet to JSON conversion utility."""
 from pathlib import Path
 import polars as pl
+from pyarrow import fs
 from polars.exceptions import PolarsError
 
 
@@ -8,22 +9,28 @@ class Parquet2JSONError(Exception):
     """Base class for exceptions in this module."""
 
 
-def read_parquet(path: str) -> pl.LazyFrame:
-    """Read a parquet file and return a LazyFrame."""
-    print(f"Reading parquet file from {path}")
-    lf = pl.scan_parquet(path)
-    return lf
+def read_parquet(parquet_path: Path) -> pl.DataFrame:
+    """Read a parquet file and return a DataFrame."""
+    try:
+        # pyarrow does not automatically detect the filesystem
+        filesystem, path = fs.FileSystem.from_uri(parquet_path)
+        df = pl.read_parquet(path,
+                             use_pyarrow=True,
+                             pyarrow_options={"filesystem": filesystem})
+        return df
+    except FileNotFoundError as e:
+        raise Parquet2JSONError(f"Couldn't find {parquet_path}") from e
 
 
-def write_json(lf: pl.LazyFrame, path: Path) -> None:
-    """Write a LazyFrame to a JSON file."""
-    lf.sink_ndjson(path)
+def write_json(df: pl.DataFrame, path: Path) -> None:
+    """Write a DataFrame to a JSON file."""
+    df.write_ndjson(path)
 
 
-def convert(parquet_in: str, json_out: Path) -> None:
+def convert(parquet_path: Path, json_path: Path) -> None:
     """Convert a parquet file to a JSON file."""
     try:
-        lf = read_parquet(parquet_in)
-        write_json(lf, json_out)
-    except (PolarsError, FileNotFoundError) as e:
+        df = read_parquet(parquet_path)
+        write_json(df, json_path)
+    except (PolarsError) as e:
         raise Parquet2JSONError(e) from e
