@@ -19,18 +19,16 @@ Or if reading parquet from Google bucket:
 ### Help
 ```
  Usage: parquet2json [OPTIONS] PARQUET JSON                          
-                                                                     
- Convert parquet file to json.                                       
-                                                                     
-╭─ Arguments ───────────────────────────────────────────────────────╮
-│ *    parquet      TEXT  Input path to a parquet. [default: None]  │
-│                         [required]                                │
-│ *    json         PATH  Output path to a JSON. [default: None]    │
-│                         [required]                                │
-╰───────────────────────────────────────────────────────────────────╯
-╭─ Options ─────────────────────────────────────────────────────────╮
-│ --help  -h        Show this message and exit.                     │
-╰───────────────────────────────────────────────────────────────────╯
+                                                             
+╭─ Arguments ───────────────────────────────────────────────────────────╮
+│ *    parquet      TEXT    Input path/URI to parquet. [default: None]  │
+│                           [required]                                  │
+│      json         [JSON]  Output JSON path, or leave empty for STDOUT │
+│                           [default: None]                             │
+╰───────────────────────────────────────────────────────────────────────╯
+╭─ Options ─────────────────────────────────────────────────────────────╮
+│ --help  -h        Show this message and exit.                         │
+╰───────────────────────────────────────────────────────────────────────╯
 ```
 
 ## Copyright

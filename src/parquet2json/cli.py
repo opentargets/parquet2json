@@ -16,7 +16,7 @@ app = typer.Typer(add_completion=False,
                   context_settings=CLI_CONTEXT_OPTIONS)
 
 logging.basicConfig(
-    level="NOTSET",
+    level="ERROR",
     format="%(message)s",
     datefmt="[%X]",
     handlers=[RichHandler()]
@@ -28,8 +28,11 @@ log = logging.getLogger("rich")
              no_args_is_help=True,
              context_settings=CLI_CONTEXT_OPTIONS)
 def parquet2json(
-    parquet: str = typer.Argument(help="Input path/URI to parquet."),
-    json: Path = typer.Argument(help="Output JSON path.")
+    parquet: str = typer.Argument(
+        help="Input path/URI to parquet."),
+    json: Path = typer.Argument(
+        help="Output JSON path, or leave empty for STDOUT",
+        default=None)
 ) -> None:
     """Convert parquet file to json."""
     start = time.time()
@@ -37,11 +40,11 @@ def parquet2json(
         convert(parquet_path=parquet, json_path=json)
         end = time.time()
         elapsed_time = end - start
-        log.info("Converted %s to %s in %.2f seconds.",
-                 parquet,
-                 json,
-                 elapsed_time
-                 )
+        log.debug("Converted %s to %s in %.2f seconds.",
+                  parquet,
+                  json,
+                  elapsed_time
+                  )
     except Parquet2JSONError as e:
         log.error(e)
         raise typer.Exit(1)

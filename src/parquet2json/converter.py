@@ -2,6 +2,7 @@
 from pathlib import Path
 import polars as pl
 from pyarrow import fs
+import sys
 from polars.exceptions import PolarsError
 
 
@@ -23,8 +24,11 @@ def read_parquet(parquet_path: Path) -> pl.DataFrame:
 
 
 def write_json(df: pl.DataFrame, path: Path) -> None:
-    """Write a DataFrame to a JSON file."""
-    df.write_ndjson(path)
+    """Write the DataFrame as JSON"""
+    if path is None:
+        sys.stdout.write(df.write_ndjson())
+    else:
+        df.write_ndjson(path)
 
 
 def convert(parquet_path: Path, json_path: Path) -> None:
