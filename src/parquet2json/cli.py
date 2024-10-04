@@ -31,10 +31,10 @@ def parquet2json(
     parquet: str = typer.Argument(
         help="Input path/URI to parquet."),
     json: Path = typer.Argument(
-        help="Output JSON path, or leave empty for STDOUT",
+        help="Output NDJSON path, or leave empty for STDOUT",
         default=None)
 ) -> None:
-    """Convert parquet file to json."""
+    """Convert parquet file to newline delimited JSON."""
     start = time.time()
     try:
         convert(parquet_path=parquet, json_path=json)
