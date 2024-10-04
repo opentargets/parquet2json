@@ -1,10 +1,10 @@
 """CLI entry point for the application."""
 from pathlib import Path
 import time
-import logging
-from rich.logging import RichHandler
 import typer
+
 from parquet2json.converter import convert, Parquet2JSONError
+from parquet2json.utils import setup_logger, LogLevels
 
 
 CLI_CONTEXT_OPTIONS = {"help_option_names": ["-h", "--help"],
@@ -15,14 +15,6 @@ app = typer.Typer(add_completion=False,
                   rich_markup_mode="rich",
                   context_settings=CLI_CONTEXT_OPTIONS)
 
-logging.basicConfig(
-    level="ERROR",
-    format="%(message)s",
-    datefmt="[%X]",
-    handlers=[RichHandler()]
-)
-log = logging.getLogger("rich")
-
 
 @app.command("parquet2json",
              no_args_is_help=True,
@@ -32,9 +24,15 @@ def parquet2json(
         help="Input path/URI to parquet."),
     json: Path = typer.Argument(
         help="Output NDJSON path, or leave empty for STDOUT",
-        default=None)
+        default=None),
+    log_level: LogLevels = typer.Option(
+        help="Log level",
+        default="INFO",
+        case_sensitive=False
+        )
 ) -> None:
     """Convert parquet file to newline delimited JSON."""
+    log = setup_logger(log_level.upper())
     start = time.time()
     try:
         convert(parquet_path=parquet, json_path=json)
