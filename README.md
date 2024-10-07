@@ -16,21 +16,36 @@ Or if reading parquet from Google bucket:
 - Install to virtual env `uv venv; source .venv/bin/activate; uv pip install "git+https://github.com/opentargets/parquet2json"` 
 - `parquet2json <PARQUET_IN> <JSON_OUT>`
 
+### Examples
+## Remote parquet to ndjson stdout and pipe to `jq`
+```
+uv run parquet2json gs://<parquet> | jq "."
+```
+or
+```
+docker run -it p2j gs://<parquet> | jq "."
+```
+
 ### Help
 ```
  Usage: parquet2json [OPTIONS] PARQUET JSON
-                           
+
  Convert parquet file to newline delimited JSON.                           
                                                                            
-╭─ Arguments ─────────────────────────────────────────────────────────────╮
-│ *    parquet      TEXT    Input path/URI to parquet. [default: None]    │
-│                           [required]                                    │
-│      json         [JSON]  Output NDJSON path, or leave empty for STDOUT │
-│                           [default: None]                               │
-╰─────────────────────────────────────────────────────────────────────────╯
-╭─ Options ───────────────────────────────────────────────────────────────╮
-│ --help  -h        Show this message and exit.                           │
-╰─────────────────────────────────────────────────────────────────────────╯
+╭─ Arguments ──────────────────────────────────────────────────────────╮
+│ *    parquet      TEXT    Input path/URI to parquet. [default: None] │
+│                           [required]                                 │
+│      json         [JSON]  Output NDJSON path, or leave empty for     │
+│                           STDOUT                                     │
+│                           [default: None]                            │
+╰──────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────╮
+│ --log-level          [critical|fatal|error|  Log level               │
+│                      warn|warning|info|debu  [default: INFO]         │
+│                      g|notset]                                       │
+│ --help       -h                              Show this message and   │
+│                                              exit.                   │
+╰──────────────────────────────────────────────────────────────────────╯
 ```
 
 ## Copyright

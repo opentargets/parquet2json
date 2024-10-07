@@ -1,7 +1,7 @@
 """Parquet to JSON conversion utility."""
 from pathlib import Path
 import polars as pl
-from pyarrow import fs
+from pyarrow import fs, ArrowInvalid
 import sys
 from polars.exceptions import PolarsError
 
@@ -21,6 +21,8 @@ def read_parquet(parquet_path: Path) -> pl.DataFrame:
         return df
     except FileNotFoundError as e:
         raise Parquet2JSONError(f"Couldn't find {parquet_path}") from e
+    except ArrowInvalid as e:
+        raise Parquet2JSONError(f"Couldn't read {parquet_path}") from e
 
 
 def write_json(df: pl.DataFrame, path: Path) -> None:
