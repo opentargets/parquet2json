@@ -27,21 +27,32 @@ def read_parquet(parquet_path: Path) -> pl.DataFrame:
         raise Parquet2JSONError(f"Couldn't read {parquet_path}") from e
 
 
-def drop_nulls_from_row(row: dict[str, Any]) -> str:
+def drop_nulls_from_row(row: dict[str, Any]) -> dict[str, Any]:
     """Drop null values from a row.
     """
-    return json.dumps({k: v for k, v in row.items() if v is not None})
+    return {k: v for k, v in row.items() if v is not None}
+
+
+def json_lines_to_stdout(rows: list[dict[str, Any]]) -> None:
+    """Write a list of rows to stdout as JSON lines."""
+    return [sys.stdout.write(json.dumps(drop_nulls_from_row(row)) + '\n')
+            for row in rows]
+
+
+def json_lines_to_file(rows: list[dict[str, Any]], path: Path) -> None:
+    """Write a list of rows to a file as JSON lines."""
+    with open(path, 'w', encoding='UTF-8') as f:
+        return [f.write(json.dumps(drop_nulls_from_row(row)) + '\n')
+                for row in rows]
 
 
 def write_json(df: pl.DataFrame, path: Path) -> None:
     """Write the DataFrame as JSON"""
     rows = df.iter_rows(named=True)
     if path is None:
-        return [sys.stdout.write(drop_nulls_from_row(row) + '\n')
-                for row in rows]
-    with open(path, 'w', encoding='UTF-8') as f:
-        return [f.write(drop_nulls_from_row(row) + '\n')
-                for row in rows]
+        json_lines_to_stdout(rows)
+    else:
+        json_lines_to_file(rows, path)
 
 
 def convert(parquet_path: Path, json_path: Path) -> None:
