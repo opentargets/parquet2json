@@ -1,5 +1,7 @@
 """Parquet to JSON conversion utility."""
+import json
 from pathlib import Path
+from typing import Any
 import polars as pl
 from pyarrow import fs, ArrowInvalid
 import sys
@@ -25,12 +27,21 @@ def read_parquet(parquet_path: Path) -> pl.DataFrame:
         raise Parquet2JSONError(f"Couldn't read {parquet_path}") from e
 
 
+def drop_nulls_from_row(row: dict[str, Any]) -> str:
+    """Drop null values from a row.
+    """
+    return json.dumps({k: v for k, v in row.items() if v is not None})
+
+
 def write_json(df: pl.DataFrame, path: Path) -> None:
     """Write the DataFrame as JSON"""
+    rows = df.iter_rows(named=True)
     if path is None:
-        sys.stdout.write(df.write_ndjson())
-    else:
-        df.write_ndjson(path)
+        return [sys.stdout.write(drop_nulls_from_row(row) + '\n')
+                for row in rows]
+    with open(path, 'w', encoding='UTF-8') as f:
+        return [f.write(drop_nulls_from_row(row) + '\n')
+                for row in rows]
 
 
 def convert(parquet_path: Path, json_path: Path) -> None:
