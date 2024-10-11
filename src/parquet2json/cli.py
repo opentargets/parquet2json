@@ -35,7 +35,7 @@ def parquet2json(
     log = setup_logger(log_level.upper())
     start = time.time()
     try:
-        convert(parquet_path=parquet, json_path=json)
+        convert(parquet_path=parquet, json_path=json, log=log)
         end = time.time()
         elapsed_time = end - start
         log.debug("Converted %s to %s in %.2f seconds.",

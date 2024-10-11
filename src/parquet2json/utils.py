@@ -16,7 +16,7 @@ def setup_logger(loglevel: str) -> Logger:
     """
     logging.basicConfig(
         level=loglevel,
-        format="%(message)s",
+        format="%(module)s:%(lineno)d: %(message)s",
         datefmt="[%X]",
         handlers=[RichHandler()]
     )
