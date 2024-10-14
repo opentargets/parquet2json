@@ -4,8 +4,8 @@ from logging import Logger
 from pathlib import Path
 from typing import Any
 import polars as pl
-from pyarrow import fs, ArrowInvalid
-import pyarrow.dataset as ds
+import pyarrow as pa
+from pyarrow.fs import FileSystem
 import sys
 from polars.exceptions import PolarsError
 
@@ -24,13 +24,15 @@ class Converter:
         try:
             # pyarrow does not automatically detect the filesystem
             pl.Config(set_auto_structify=True)
-            filesystem, path = fs.FileSystem.from_uri(parquet_path)
-            schema = pl.read_parquet(parquet_path,
-                                     n_rows=1,
-                                     hive_partitioning=True,
-                                     use_pyarrow=False,
-                                     pyarrow_options={"filesystem": filesystem}
-                                     ).to_arrow().schema
+            filesystem, path = FileSystem.from_uri(parquet_path)
+            pl_schema = pl.scan_parquet(parquet_path).schema
+            self.log.debug("Polar Schema: %s", pl_schema)
+            schema: pa.Schema = pl.read_parquet(parquet_path,
+                                                n_rows=1,
+                                                hive_partitioning=True,
+                                                use_pyarrow=False,
+                                                pyarrow_options={"filesystem": filesystem}
+                                                ).to_arrow().schema
             self.log.debug("Schema: %s", schema)
             df = pl.read_parquet(path,
                                  hive_partitioning=True,
@@ -42,7 +44,7 @@ class Converter:
         except FileNotFoundError as e:
             self.log.error(f"Couldn't find {parquet_path}")
             raise Parquet2JSONError(f"Couldn't find {parquet_path}") from e
-        except ArrowInvalid as e:
+        except pa.ArrowInvalid as e:
             self.log.error(f"Couldn't read {parquet_path}")
             raise Parquet2JSONError(f"Couldn't read {parquet_path}") from e
         except PolarsError as e:
