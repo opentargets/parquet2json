@@ -1,4 +1,5 @@
 """Parquet to JSON conversion utility."""
+
 import json
 from logging import Logger
 from pathlib import Path
@@ -8,6 +9,7 @@ import pyarrow as pa
 from pyarrow.fs import FileSystem
 import sys
 from polars.exceptions import PolarsError
+from parquet2json.elasticsearch import load_docs_to_elastic
 
 
 class Parquet2JSONError(Exception):
@@ -16,8 +18,10 @@ class Parquet2JSONError(Exception):
 
 class Converter:
     """Parquet to JSON converter class."""
+
     def __init__(self, log: Logger):
         self.log = log
+        self.rows = []
 
     def read_parquet(self, parquet_path: Path) -> pl.DataFrame:
         """Read a parquet file and return a DataFrame."""
@@ -25,21 +29,24 @@ class Converter:
             # pyarrow does not automatically detect the filesystem
             pl.Config(set_auto_structify=True)
             filesystem, path = FileSystem.from_uri(parquet_path)
-            pl_schema = pl.scan_parquet(parquet_path).schema
-            self.log.debug("Polar Schema: %s", pl_schema)
-            schema: pa.Schema = pl.read_parquet(parquet_path,
-                                                n_rows=1,
-                                                hive_partitioning=True,
-                                                use_pyarrow=False,
-                                                pyarrow_options={"filesystem": filesystem}
-                                                ).to_arrow().schema
+            schema: pa.Schema = (
+                pl.read_parquet(
+                    parquet_path,
+                    n_rows=1,
+                    hive_partitioning=True,
+                    use_pyarrow=False,
+                    pyarrow_options={"filesystem": filesystem},
+                )
+                .to_arrow()
+                .schema
+            )
             self.log.debug("Schema: %s", schema)
-            df = pl.read_parquet(path,
-                                 hive_partitioning=True,
-                                 use_pyarrow=True,
-                                 pyarrow_options={"filesystem": filesystem,
-                                                  "schema": schema}
-                                 )
+            df = pl.read_parquet(
+                path,
+                hive_partitioning=True,
+                use_pyarrow=True,
+                pyarrow_options={"filesystem": filesystem, "schema": schema},
+            )
             return df
         except FileNotFoundError as e:
             self.log.error(f"Couldn't find {parquet_path}")
@@ -52,45 +59,36 @@ class Converter:
             raise Parquet2JSONError(e) from e
 
     def drop_nulls_from_collection(
-        self,
-        collection: dict[str, Any] | list[Any]
+        self, collection: dict[str, Any] | list[Any]
     ) -> dict[str, Any]:
-        """Recursively drop null values from a Dict or List.
-        """
+        """Recursively drop null values from a Dict or List."""
         if isinstance(collection, list):
             return type(collection)(
-                self.drop_nulls_from_collection(x)
-                for x in collection if x is not None)
+                self.drop_nulls_from_collection(x) for x in collection if x is not None
+            )
         elif isinstance(collection, dict):
             return type(collection)(
-                (self.drop_nulls_from_collection(k),
-                 self.drop_nulls_from_collection(v))
+                (self.drop_nulls_from_collection(k), self.drop_nulls_from_collection(v))
                 for k, v in collection.items()
-                if k is not None and v is not None)
+                if k is not None and v is not None
+            )
         else:
             return collection
 
-    def json_lines_to_stdout(
-        self,
-        rows: list[dict[str, Any]]
-    ) -> None:
+    def json_lines_to_stdout(self, rows: list[dict[str, Any]]) -> None:
         """Write a list of rows to stdout as JSON lines."""
-        return [sys.stdout.write(
-            json.dumps(
-                self.drop_nulls_from_collection(row)) + '\n')
-                for row in rows]
+        return [
+            sys.stdout.write(json.dumps(self.drop_nulls_from_collection(row)) + "\n")
+            for row in rows
+        ]
 
-    def json_lines_to_file(
-        self,
-        rows: list[dict[str, Any]],
-        path: Path
-    ) -> None:
+    def json_lines_to_file(self, rows: list[dict[str, Any]], path: Path) -> None:
         """Write a list of rows to a file as JSON lines."""
-        with open(path, 'w', encoding='UTF-8') as f:
-            return [f.write(
-                json.dumps(
-                    self.drop_nulls_from_collection(row)) + '\n')
-                    for row in rows]
+        with open(path, "w", encoding="UTF-8") as f:
+            return [
+                f.write(json.dumps(self.drop_nulls_from_collection(row)) + "\n")
+                for row in rows
+            ]
 
     def write_json(self, df: pl.DataFrame, path: Path) -> None:
         """Write the DataFrame as JSON"""
@@ -100,11 +98,14 @@ class Converter:
         else:
             self.json_lines_to_file(rows, path)
 
+    def index_in_elastic(self, df, index: str) -> None:
+        """Index the rows in Elasticsearch"""
+        rows = df.rows(named=True)
+        load_docs_to_elastic(rows, index)
+
 
 def convert(
-    parquet_path: Path,
-    json_path: Path,
-    log: Logger
+    parquet_path: Path, json_path: Path, log: Logger, index: str | None = None
 ) -> None:
     """Convert a parquet file to a JSON file."""
     try:
@@ -113,5 +114,8 @@ def convert(
         df = converter.read_parquet(parquet_path)
         log.debug("Writing %s", json_path)
         converter.write_json(df, json_path)
-    except (PolarsError) as e:
+        if index:
+            log.debug("Indexing in elastic")
+            converter.index_in_elastic(df, index)
+    except PolarsError as e:
         raise Parquet2JSONError(e) from e

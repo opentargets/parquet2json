@@ -29,13 +29,16 @@ def parquet2json(
         help="Log level",
         default="INFO",
         case_sensitive=False
-        )
+        ),
+    index: str = typer.Option(
+        help="Index in Elasticsearch",
+        default=None)
 ) -> None:
     """Convert parquet file to newline delimited JSON."""
     log = setup_logger(log_level.upper())
     start = time.time()
     try:
-        convert(parquet_path=parquet, json_path=json, log=log)
+        convert(parquet_path=parquet, json_path=json, log=log, index=index)
         end = time.time()
         elapsed_time = end - start
         log.debug("Converted %s to %s in %.2f seconds.",
