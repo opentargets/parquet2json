@@ -98,14 +98,19 @@ class Converter:
         else:
             self.json_lines_to_file(rows, path)
 
-    def index_in_elastic(self, df, index: str) -> None:
+    def index_in_elastic(self, df, es_uri: str, index: str) -> None:
         """Index the rows in Elasticsearch"""
         rows = df.rows(named=True)
-        load_docs_to_elastic(rows, index)
+        load_docs_to_elastic(rows, es_uri, index)
 
 
 def convert(
-    parquet_path: Path, json_path: Path, log: Logger, index: str | None = None
+    parquet_path: Path,
+    json_path: Path,
+    log: Logger,
+    es_host: str,
+    es_port: int,
+    es_index: str | None = None,
 ) -> None:
     """Convert a parquet file to a JSON file."""
     try:
@@ -114,8 +119,9 @@ def convert(
         df = converter.read_parquet(parquet_path)
         log.debug("Writing %s", json_path)
         converter.write_json(df, json_path)
-        if index:
+        if es_index:
             log.debug("Indexing in elastic")
-            converter.index_in_elastic(df, index)
+            es_uri = f"http://{es_host}:{es_port}"
+            converter.index_in_elastic(df, es_uri, es_index)
     except PolarsError as e:
         raise Parquet2JSONError(e) from e

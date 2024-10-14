@@ -1,4 +1,5 @@
 """CLI entry point for the application."""
+
 from pathlib import Path
 import time
 import typer
@@ -7,45 +8,47 @@ from parquet2json.converter import convert, Parquet2JSONError
 from parquet2json.utils import setup_logger, LogLevels
 
 
-CLI_CONTEXT_OPTIONS = {"help_option_names": ["-h", "--help"],
-                       "ignore_unknown_options": True}
+CLI_CONTEXT_OPTIONS = {
+    "help_option_names": ["-h", "--help"],
+    "ignore_unknown_options": True,
+}
 
-app = typer.Typer(add_completion=False,
-                  no_args_is_help=True,
-                  rich_markup_mode="rich",
-                  context_settings=CLI_CONTEXT_OPTIONS)
+app = typer.Typer(
+    add_completion=False,
+    no_args_is_help=True,
+    rich_markup_mode="rich",
+    context_settings=CLI_CONTEXT_OPTIONS,
+)
 
 
-@app.command("parquet2json",
-             no_args_is_help=True,
-             context_settings=CLI_CONTEXT_OPTIONS)
+@app.command("parquet2json", no_args_is_help=True, context_settings=CLI_CONTEXT_OPTIONS)
 def parquet2json(
-    parquet: str = typer.Argument(
-        help="Input path/URI to parquet."),
+    parquet: str = typer.Argument(help="Input path/URI to parquet."),
     json: Path = typer.Argument(
-        help="Output NDJSON path, or leave empty for STDOUT",
-        default=None),
+        help="Output NDJSON path, or leave empty for STDOUT", default=None
+    ),
     log_level: LogLevels = typer.Option(
-        help="Log level",
-        default="INFO",
-        case_sensitive=False
-        ),
-    index: str = typer.Option(
-        help="Index in Elasticsearch",
-        default=None)
+        help="Log level", default="INFO", case_sensitive=False
+    ),
+    es_host: str = typer.Option(help="Elasticsearch host", default="localhost"),
+    es_port: int = typer.Option(help="Elasticsearch port", default=9200),
+    es_index: str = typer.Option(help="Index in Elasticsearch", default=None),
 ) -> None:
     """Convert parquet file to newline delimited JSON."""
     log = setup_logger(log_level.upper())
     start = time.time()
     try:
-        convert(parquet_path=parquet, json_path=json, log=log, index=index)
+        convert(
+            parquet_path=parquet,
+            json_path=json,
+            log=log,
+            es_host=es_host,
+            es_port=es_port,
+            es_index=es_index,
+        )
         end = time.time()
         elapsed_time = end - start
-        log.debug("Converted %s to %s in %.2f seconds.",
-                  parquet,
-                  json,
-                  elapsed_time
-                  )
+        log.debug("Converted %s to %s in %.2f seconds.", parquet, json, elapsed_time)
     except Parquet2JSONError as e:
         log.error(e)
         raise typer.Exit(1)
