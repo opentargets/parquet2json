@@ -39,6 +39,10 @@ class Converter:
                 .to_arrow()
                 .schema
             )
+            schema = schema.set(
+                schema.get_field_index("chromosome"),
+                pa.field("chromosome", pa.string()),
+            )
             self.log.debug("Schema: %s", schema)
             df = pl.read_parquet(
                 path,
