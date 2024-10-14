@@ -19,7 +19,8 @@ class Parquet2JSONError(Exception):
 class Converter:
     """Parquet to JSON converter class."""
 
-    def __init__(self, log: Logger):
+    def __init__(self, hive_partioning: bool, log: Logger):
+        self.hive_partioning = hive_partioning
         self.log = log
 
     def get_pyarrow_schema(self, parquet_path: Path) -> pa.Schema:
@@ -31,7 +32,7 @@ class Converter:
             pl.read_parquet(
                 parquet_path,
                 n_rows=1,
-                hive_partitioning=True,
+                hive_partitioning=self.hive_partioning,
             )
             .to_arrow()
             .schema
@@ -53,7 +54,7 @@ class Converter:
             schema = self.get_pyarrow_schema(parquet_path)
             df = pl.read_parquet(
                 path,
-                hive_partitioning=True,
+                hive_partitioning=self.hive_partioning,
                 use_pyarrow=True,
                 pyarrow_options={"filesystem": filesystem, "schema": schema},
             ).lazy()
@@ -114,10 +115,12 @@ class Converter:
             self.json_lines_to_file(rows, path)
 
 
-def convert(parquet_path: Path, json_path: Path, log: Logger) -> None:
+def convert(
+    parquet_path: Path, json_path: Path, hive_partitioning: bool, log: Logger
+) -> None:
     """Convert a parquet file to a JSON file."""
     try:
-        converter = Converter(log)
+        converter = Converter(hive_partitioning, log)
         log.debug("Reading %s", parquet_path)
         df = converter.read_parquet(parquet_path)
         log.debug("Writing %s", json_path)
