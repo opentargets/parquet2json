@@ -7,6 +7,7 @@ from typing import Any
 import polars as pl
 import polars.selectors as cs
 import pyarrow as pa
+import pyarrow.parquet as pq
 from pyarrow.fs import FileSystem
 import sys
 from polars.exceptions import PolarsError
@@ -23,20 +24,27 @@ class Converter:
         self.hive_partioning = hive_partioning
         self.log = log
 
-    def get_pyarrow_schema(self, parquet_path: Path) -> pa.Schema:
+    def get_pyarrow_schema(
+        self,
+        filesystem: FileSystem,
+        path: Path,
+    ) -> pa.Schema:
         """Get the schema of a parquet file using pyarrow.
         Currently this is required because of issues with Polars and
         reading list[struct] columns.
         """
-        schema = (
-            pl.read_parquet(
-                parquet_path,
-                n_rows=1,
-                hive_partitioning=self.hive_partioning,
+        try:
+            schema = pq.read_schema(path, filesystem=filesystem)
+        except OSError:
+            schema = (
+                pl.read_parquet(
+                    path,
+                    n_rows=1,
+                    hive_partitioning=self.hive_partioning,
+                )
+                .to_arrow()
+                .schema
             )
-            .to_arrow()
-            .schema
-        )
         # Workaround for chromosome datatype inference from hive
         if "chromosome" in schema.names:
             self.log.debug("Casting chromosome to string")
@@ -56,7 +64,7 @@ class Converter:
         try:
             # pyarrow does not automatically detect the filesystem
             filesystem, path = FileSystem.from_uri(parquet_path)
-            schema = self.get_pyarrow_schema(parquet_path)
+            schema = self.get_pyarrow_schema(filesystem, path)
             df = pl.read_parquet(
                 path,
                 hive_partitioning=self.hive_partioning,
