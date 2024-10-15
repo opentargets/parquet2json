@@ -4,7 +4,7 @@ from pathlib import Path
 import time
 import typer
 
-from parquet2json.converter import convert, Parquet2JSONError
+from parquet2json.converter import convert
 from parquet2json.utils import setup_logger, LogLevels
 
 
@@ -27,9 +27,6 @@ def parquet2json(
     json: Path = typer.Argument(
         help="Output NDJSON path, or leave empty for STDOUT", default=None
     ),
-    hive_partitioning: bool = typer.Option(
-        help="Enable Hive partitioning", default=False
-    ),
     log_level: LogLevels = typer.Option(
         help="Log level", default="INFO", case_sensitive=False
     ),
@@ -41,13 +38,12 @@ def parquet2json(
         convert(
             parquet_path=parquet,
             json_path=json,
-            hive_partitioning=hive_partitioning,
             log=log,
         )
         end = time.time()
         elapsed_time = end - start
         log.debug("Converted %s to %s in %.2f seconds.", parquet, json, elapsed_time)
-    except Parquet2JSONError as e:
+    except Exception as e:
         log.error(e)
         raise typer.Exit(1)
 
