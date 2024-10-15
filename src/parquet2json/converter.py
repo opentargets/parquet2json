@@ -39,10 +39,15 @@ class Converter:
         )
         # Workaround for chromosome datatype inference from hive
         if "chromosome" in schema.names:
+            self.log.debug("Casting chromosome to string")
             schema = schema.set(
                 schema.get_field_index("chromosome"),
                 pa.field("chromosome", pa.string()),
             )
+        # Workaround for log2h4h3
+        if "log2h4h3" in schema.names:
+            self.log.debug("Removing log2h4h3")
+            schema = schema.remove(schema.get_field_index("log2h4h3"))
         self.log.debug("Schema: %s", schema)
         return schema
 
@@ -57,7 +62,7 @@ class Converter:
                 hive_partitioning=self.hive_partioning,
                 use_pyarrow=True,
                 pyarrow_options={"filesystem": filesystem, "schema": schema},
-            ).lazy()
+            )
             return df
         except FileNotFoundError as e:
             self.log.error(f"Couldn't find {parquet_path}")
@@ -103,12 +108,12 @@ class Converter:
 
     def drop_rows_with_infinite_values(self, df: pl.DataFrame) -> pl.DataFrame:
         """Drop rows with infinite values from the DataFrame."""
+        self.log.debug("Dropping rows with infinite values")
         return df.filter(~pl.any_horizontal(cs.numeric().is_infinite()))
 
     def write_json(self, df: pl.DataFrame, path: Path) -> None:
         """Write the DataFrame as JSON"""
-        filtered_df = self.drop_rows_with_infinite_values(df)
-        rows = filtered_df.collect().iter_rows(named=True)
+        rows = df.iter_rows(named=True)
         if path is None:
             self.json_lines_to_stdout(rows)
         else:
