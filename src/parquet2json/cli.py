@@ -27,6 +27,9 @@ def parquet2json(
     json: Path = typer.Argument(
         help="Output NDJSON path, or leave empty for STDOUT", default=None
     ),
+    hive_partitioning: bool = typer.Option(
+        help="Use hive partitioning", default=False, show_default=True
+    ),
     log_level: LogLevels = typer.Option(
         help="Log level", default="INFO", case_sensitive=False
     ),
@@ -39,6 +42,7 @@ def parquet2json(
             parquet_path=parquet,
             json_path=json,
             log=log,
+            hive_partitioning=hive_partitioning,
         )
         end = time.time()
         elapsed_time = end - start
