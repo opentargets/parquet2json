@@ -1,7 +1,9 @@
 """Utils"""
-from enum import StrEnum
+
 import logging
+from enum import StrEnum
 from logging import Logger
+
 from rich.logging import RichHandler
 
 
@@ -18,7 +20,7 @@ def setup_logger(loglevel: str) -> Logger:
         level=loglevel,
         format="%(module)s:%(lineno)d: %(message)s",
         datefmt="[%X]",
-        handlers=[RichHandler()]
+        handlers=[RichHandler()],
     )
     return logging.getLogger("rich")
 

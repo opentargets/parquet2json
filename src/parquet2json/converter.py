@@ -1,16 +1,17 @@
 """Parquet to JSON conversion utility."""
 
 import json
+import sys
 from logging import Logger
 from pathlib import Path
 from typing import Any
+
 import polars as pl
 import polars.selectors as cs
 import pyarrow as pa
 import pyarrow.parquet as pq
-from pyarrow.fs import FileSystem
-import sys
 from polars.exceptions import PolarsError
+from pyarrow.fs import FileSystem
 
 
 class Parquet2JSONError(Exception):
@@ -20,8 +21,8 @@ class Parquet2JSONError(Exception):
 class Converter:
     """Parquet to JSON converter class."""
 
-    def __init__(self, hive_partioning: bool, log: Logger):
-        self.hive_partioning = hive_partioning
+    def __init__(self, hive_partitioning: bool, log: Logger):
+        self.hive_partitioning = hive_partitioning
         self.log = log
 
     def get_pyarrow_schema(
@@ -40,7 +41,7 @@ class Converter:
                 pl.read_parquet(
                     path,
                     n_rows=1,
-                    hive_partitioning=self.hive_partioning,
+                    hive_partitioning=self.hive_partitioning,
                 )
                 .to_arrow()
                 .schema
@@ -67,7 +68,7 @@ class Converter:
             schema = self.get_pyarrow_schema(filesystem, path)
             df = pl.read_parquet(
                 path,
-                hive_partitioning=self.hive_partioning,
+                hive_partitioning=self.hive_partitioning,
                 use_pyarrow=True,
                 pyarrow_options={"filesystem": filesystem, "schema": schema},
             )
