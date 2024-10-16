@@ -8,6 +8,7 @@ from typing import Any, Iterator
 
 import polars as pl
 import pyarrow as pa
+import pyarrow.parquet as pq
 from polars.exceptions import PolarsError
 from pyarrow.fs import FileSystem
 
@@ -25,30 +26,25 @@ class Converter:
 
     def get_pyarrow_schema(
         self,
+        filesystem: FileSystem,
         path: Path,
     ) -> pa.Schema:
         """Get the schema of a parquet file using pyarrow.
         Currently this is required because of issues with Polars and
         reading list[struct] columns.
         """
-        schema = (
-            pl.read_parquet(
-                path,
-                hive_partitioning=self._hive_partitioning,
+        try:
+            schema = pq.read_schema(path, filesystem=filesystem)
+        except OSError:
+            schema = (
+                pl.read_parquet(
+                    path,
+                    n_rows=1,
+                    hive_partitioning=self._hive_partitioning,
+                )
+                .to_arrow()
+                .schema
             )
-            .to_arrow()
-            .schema
-        )
-        if "chromosome" in schema.names:
-            self.log.debug("Casting chromosome to string")
-            schema = schema.set(
-                schema.get_field_index("chromosome"),
-                pa.field("chromosome", pa.string()),
-            )
-        # Workaround for log2h4h3
-        if "log2h4h3" in schema.names:
-            self.log.debug("Removing log2h4h3")
-            schema = schema.remove(schema.get_field_index("log2h4h3"))
         self.log.debug("Schema: %s", schema)
         return schema
 
@@ -57,7 +53,7 @@ class Converter:
         try:
             # pyarrow does not automatically detect the filesystem
             filesystem, path = FileSystem.from_uri(parquet_path)
-            schema = self.get_pyarrow_schema(parquet_path)
+            schema = self.get_pyarrow_schema(filesystem, path)
             df = pl.read_parquet(
                 path,
                 hive_partitioning=self._hive_partitioning,
