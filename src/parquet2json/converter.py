@@ -27,7 +27,8 @@ class Converter:
     def get_pyarrow_schema(
         self,
         filesystem: FileSystem,
-        path: Path,
+        path: str,
+        parquet_path: Path,
     ) -> pa.Schema:
         """Get the schema of a parquet file using pyarrow.
         Currently this is required because of issues with Polars and
@@ -38,7 +39,7 @@ class Converter:
         except OSError:
             schema = (
                 pl.read_parquet(
-                    path,
+                    parquet_path,
                     n_rows=1,
                     hive_partitioning=self._hive_partitioning,
                 )
@@ -53,7 +54,7 @@ class Converter:
         try:
             # pyarrow does not automatically detect the filesystem
             filesystem, path = FileSystem.from_uri(parquet_path)
-            schema = self.get_pyarrow_schema(filesystem, path)
+            schema = self.get_pyarrow_schema(filesystem, path, parquet_path)
             df = pl.read_parquet(
                 path,
                 hive_partitioning=self._hive_partitioning,
