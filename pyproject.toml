@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "orjson>=3.10.7",
     "polars>=1.9.0",
     "pyarrow>=17.0.0",
     "typer>=0.12.5",

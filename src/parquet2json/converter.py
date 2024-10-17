@@ -1,11 +1,11 @@
 """Parquet to JSON conversion utility."""
 
-import json
 import sys
 from logging import Logger
 from pathlib import Path
 from typing import Any, Iterator
 
+import orjson
 import polars as pl
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -46,7 +46,7 @@ class Converter:
                 .to_arrow()
                 .schema
             )
-        self.log.debug("Schema: %s", schema)
+        self.log.debug("Schema:\n%s", schema)
         return schema
 
     def read_parquet(self, parquet_path: Path) -> pl.DataFrame:
@@ -102,7 +102,9 @@ class Converter:
     def _serialize_rows(self, rows: Iterator[dict[str, Any]]) -> Iterator[str]:
         """Serialize a row to a JSON string."""
         for row in rows:
-            formatted_row = "%s\n" % json.dumps(self._drop_nulls_recursively(row))
+            formatted_row = orjson.dumps(
+                self._drop_nulls_recursively(row), option=orjson.OPT_APPEND_NEWLINE
+            ).decode("utf-8")
             yield formatted_row
 
     def _json_lines_to_stdout(self, rows: Iterator[dict[str, Any]]) -> None:
