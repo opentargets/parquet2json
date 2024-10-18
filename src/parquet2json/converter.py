@@ -11,6 +11,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 from polars.exceptions import PolarsError
 from pyarrow.fs import FileSystem
+from smart_open import open
 
 
 class Parquet2JSONError(Exception):
